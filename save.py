@@ -120,7 +120,7 @@ SCOPES = ['https://www.googleapis.com/auth/drive']
 load_dotenv()
 
 # get folder id
-if len(sys.argv) < 2:    
+if len(sys.argv) < 2:
     google_drive_folder_id = os.getenv("GOOGLE_DRIVE_FOLDER_ID")
     if (not google_drive_folder_id):
         print("Please provide Google drive folder ID.")
