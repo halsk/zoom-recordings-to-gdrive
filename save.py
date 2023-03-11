@@ -196,29 +196,31 @@ save_meeting_ids = get_selected_meetings(meetings)
 
 # Download the recordings and save to Google Drive
 for meeting in save_meeting_ids:
-    for recording in meeting['recording_files']:
-        if recording['file_type'] == 'MP4':  # MP4 をダウンロードする
-            download_url = recording['download_url']
-            file_name = (
-                f"{meeting['topic']} - "
-                f"{recording['recording_start'].replace(':', '-')}.mp4"
-            )
-            file_path = os.path.join(os.getcwd(), 'downloads', file_name)
-            print(f'Downloading {file_name}')
-            downloadfile(download_url, file_path, recording['file_size'],
-                         zoom_headers)
+    # download only MP4 files
+    for recording in list(filter(lambda r: r['file_type'] == 'MP4', 
+                                 meeting['recording_files'])):
+        download_url = recording['download_url']
+        file_name = (
+            f"{meeting['topic']} - "
+            f"{recording['recording_start'].replace(':', '-')}.mp4"
+        )
+        file_path = os.path.join(os.getcwd(), 'downloads', file_name)
+        # download
+        print(f'Downloading {file_name}')
+        downloadfile(download_url, file_path, recording['file_size'],
+                     zoom_headers)
 
-            # Upload the recording to Google Drive
-            drive_service = build('drive', 'v3', credentials=creds)
-            file_metadata = {'name': file_name,
-                             'parents': [google_drive_folder_id]}
-            media = MediaFileUpload(file_path, resumable=True)
-            print('Uploading downloaded file to Google Drive...')
-            file = drive_service.files().create(body=file_metadata,
-                                                media_body=media, fields='id'
-                                                ).execute()
+        # Upload the recording to Google Drive
+        drive_service = build('drive', 'v3', credentials=creds)
+        file_metadata = {'name': file_name,
+                         'parents': [google_drive_folder_id]}
+        media = MediaFileUpload(file_path, resumable=True)
+        print('Uploading downloaded file to Google Drive...')
+        file = drive_service.files().create(body=file_metadata,
+                                            media_body=media, fields='id'
+                                            ).execute()
 
-            # Print the Google Drive file ID
-            print(f'Uploaded file ID: {file.get("id")}')
-
+        # Print the Google Drive file ID
+        print(f'Uploaded file ID: {file.get("id")}')
+# finished!
 print('Finished')
