@@ -8,7 +8,7 @@ This script supports downloading Zoom recordings, and upload these files to spec
 
 Enable Google Drive API via Google Cloud console, then place credentials file as `credentials.json`.
 
-1. Go to the Google Cloud Console (https://console.cloud.google.com/).
+1. Go to the Google Cloud Console (<https://console.cloud.google.com/>).
 2. Click the "Select a project" drop-down list at the top of the screen and select the project you want to use.
 3. Click the navigation menu (≡) in the top-left corner of the screen, then select "APIs & Services" > "Library".
 4. Search for "Google Drive API" and click on it.
@@ -22,7 +22,7 @@ Enable Google Drive API via Google Cloud console, then place credentials file as
 
 ### Create Zoom App and create `zoom_credentials.json`
 
-1. Go to the Zoom App Marketplace (https://marketplace.zoom.us/).
+1. Go to the Zoom App Marketplace (<https://marketplace.zoom.us/>).
 2. Click the "Develop" dropdown menu in the top-right corner of the screen, then select "Build App".
 3. Select "OAuth" as the app type and click "Create".
 4. Enter a name for your app and Account-level app, click "Create".
@@ -48,6 +48,6 @@ Run
 
 You can get the googledrive_folder_id from the Google Dfive URL.
 
-Example: https://drive.google.com/drive/u/1/folders/**1N3xbtEKMhDsarV5PO-H-2argObRpsfdie3**
+Example: "https://drive.google.com/drive/u/1/folders/**1N3xbtEKMhDsarV5PO-H-2argObRpsfdie3**"
 
 (The string after `/folders/` is the id.)
