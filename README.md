@@ -51,3 +51,17 @@ You can get the googledrive_folder_id from the Google Dfive URL.
 Example: "https://drive.google.com/drive/u/1/folders/**1N3xbtEKMhDsarV5PO-H-2argObRpsfdie3**"
 
 (The string after `/folders/` is the id.)
+
+At the first time, a default browser will open Google and Zoom authentication urls and ask OAuth permission.
+
+### Use .env
+
+If you don't want to specify Google Drive folder ID everytime, you can save the id on `.env` folder.
+Please create .env file and set `GOOGLE_DRIVE_FOLDER_ID`.
+
+example:
+
+```bash
+echo "GOOGLE_DRIVE_FOLDER_ID='1N3xthDsarV5PO-H-2argO.....'" > .env
+python save.py #<- this should work
+```
