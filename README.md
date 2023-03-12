@@ -1,6 +1,6 @@
-# Download zoom recordings and save to Google Drive
+# Download zoom recordings and save to a Google Drive folder
 
-This script supports downloading Zoom recordings, and upload these files to specified Goolge Drive folder.
+This script downloads Zoom recordings, and upload these files to specified Goolge Drive folder.
 
 ## Setup
 
