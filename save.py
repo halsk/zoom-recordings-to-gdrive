@@ -217,7 +217,8 @@ for meeting in save_meeting_ids:
         media = MediaFileUpload(file_path, resumable=True)
         print('Uploading downloaded file to Google Drive...')
         file = drive_service.files().create(body=file_metadata,
-                                            media_body=media, fields='id'
+                                            media_body=media, fields='id',
+                                            supportsAllDrives=True
                                             ).execute()
 
         # Print the Google Drive file ID
