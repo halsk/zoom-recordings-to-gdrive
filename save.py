@@ -197,7 +197,7 @@ save_meeting_ids = get_selected_meetings(meetings)
 # Download the recordings and save to Google Drive
 for meeting in save_meeting_ids:
     # download only MP4 files
-    for recording in list(filter(lambda r: r['file_type'] == 'MP4', 
+    for recording in list(filter(lambda r: r['file_type'] == 'MP4',
                                  meeting['recording_files'])):
         download_url = recording['download_url']
         file_name = (
