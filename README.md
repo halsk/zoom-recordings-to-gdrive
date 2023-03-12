@@ -46,7 +46,7 @@ Run
 
 `python save.py {googledrive_folder_id}`
 
-You can get the googledrive_folder_id from the Google Dfive URL.
+You can get the googledrive_folder_id from the Google Drive URL.
 
 Example: https://drive.google.com/drive/u/1/folders/1N3xbtEKMhDsarV5PO-H-2argObRpsfdie3
 
