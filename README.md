@@ -42,7 +42,7 @@ The tested python version is `3.10.6`
 Run
 `pip install -r requirements.txt`
 
-### Run script
+## Run script
 
 `python save.py {googledrive_folder_id}`
 
@@ -54,7 +54,7 @@ In this case, The string starting from `1N3x` after `/folders/` is the id.
 
 At the first time, a default browser will open Google and Zoom authentication urls and ask OAuth permission.
 
-### Use .env
+## Use .env
 
 If you don't want to specify Google Drive folder ID everytime, you can save the id on `.env` file.
 Please create .env file and set `GOOGLE_DRIVE_FOLDER_ID`.
