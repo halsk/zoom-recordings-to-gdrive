@@ -19,6 +19,8 @@ from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.http import MediaFileUpload
 
+SCOPES = ['https://www.googleapis.com/auth/drive']
+
 
 def downloadfile(fileurl, localpath, filesize, headers):
     """
@@ -67,12 +69,12 @@ def adjust_timezone(datetimestr, timezone):
     return new_dt.strftime('%Y-%m-%d %H:%M:%S')
 
 
-def get_selected_meetings(mlist):
+def get_selected_meetings(meetings):
     """
     Print selectable meeting list and return user selections
 
     Parameters:
-    mlist (array): The array of meeting list obtained from Zoom API.
+    meetings (array): The array of meeting list obtained from Zoom API.
 
     Returns:
     array: selected meeting list
@@ -116,117 +118,111 @@ def get_selected_meetings(mlist):
     return selections
 
 
-SCOPES = ['https://www.googleapis.com/auth/drive']
-load_dotenv()
-
-# get folder id
-if len(sys.argv) < 2:
-    google_drive_folder_id = os.getenv("GOOGLE_DRIVE_FOLDER_ID")
-    if (not google_drive_folder_id):
-        print("Please provide Google drive folder ID.")
-        print("Usage: python save.py google_drive_folder_id")
-        sys.exit(1)
-else:
-    google_drive_folder_id = sys.argv[1]
-
-# Set up the Zoom API and Google Drive API credentials
-print(google_drive_folder_id)
-ZOOM_SECRETS_FILE = "zoom_credentials.json"
-
-creds = None
-
-if os.path.exists('token.json'):
-    # get token from OAuth URL
-    creds = Credentials.from_authorized_user_file('token.json')
-
-if not creds or not creds.valid:
-    if creds and creds.expired and creds.refresh_token:
-        # refresh token
-        creds.refresh(Request())
+def get_google_drive_folder_id():
+    load_dotenv()
+    if len(sys.argv) < 2:
+        google_drive_folder_id = os.getenv("GOOGLE_DRIVE_FOLDER_ID")
+        if (not google_drive_folder_id):
+            print("Please provide Google drive folder ID.")
+            print("Usage: python save.py google_drive_folder_id")
+            sys.exit(1)
     else:
-        # Open browser to get permission
-        flow = InstalledAppFlow.from_client_secrets_file(
-            'credentials.json', SCOPES)
-        creds = flow.run_local_server(port=0)
-    with open('token.json', 'w') as token:
-        # save token data to a file
-        token.write(creds.to_json())
+        google_drive_folder_id = sys.argv[1]
+    return google_drive_folder_id
 
-# Authenticate with the Zoom API using OAuth
-flow = flow_from_clientsecrets(ZOOM_SECRETS_FILE,
-                               message='Please set up oauth first',
-                               scope=['recording:read'])
-# read existing tokens
-storage = Storage("zoom_token.json")
-credentials = storage.get()
 
-if credentials is None or credentials.invalid:
-    # Open browser and get authentication.
-    flags = argparser.parse_args()
-    credentials = run_flow(flow, storage, flags)
-else:
-    # Make sure we have an up-to-date copy of the creds.
-    credentials.refresh(httplib2.Http())
+def get_google_drive_credentials():
+    creds = None
+    if os.path.exists('token.json'):
+        creds = Credentials.from_authorized_user_file('token.json')
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow\
+                .from_client_secrets_file('credentials.json', SCOPES)
+            creds = flow.run_local_server(port=0)
+        with open('token.json', 'w') as token:
+            token.write(creds.to_json())
+    return creds
 
-# Set access taken to a request header
-zoom_headers = {
-    'Authorization': f'Bearer {credentials.access_token}'
-}
 
-# get the date of four week before
-today = datetime.date.today()
-four_week_ago = today - datetime.timedelta(days=28)
+def get_zoom_credentials(zoom_secrets_file):
+    flow = flow_from_clientsecrets(zoom_secrets_file, 
+                                   message='Please set up oauth first',
+                                   scope=['recording:read'])
+    storage = Storage("zoom_token.json")
+    credentials = storage.get()
+    if credentials is None or credentials.invalid:
+        flags = argparser.parse_args()
+        credentials = run_flow(flow, storage, flags)
+    else:
+        credentials.refresh(httplib2.Http())
+    return credentials
 
-# get recordings metadata
-zoom_api_url = 'https://api.zoom.us/v2/users/me/recordings?'
-print(zoom_api_url + urllib.parse.urlencode(
-    {'from': four_week_ago.strftime('%Y-%m-%d')}))
-response = requests.get(zoom_api_url + urllib.parse.urlencode(
-    {'from': four_week_ago.strftime('%Y-%m-%d')}), headers=zoom_headers)
-response_data = json.loads(response.text)
 
-if 'meetings' not in response_data:
-    # there is no meeting
-    print('there is no meetings recently')
-    sys.exit()
+def get_zoom_headers(zoom_credentials):
+    return {'Authorization': f'Bearer {zoom_credentials.access_token}'}
 
-# user select which meeting should be recorded
-meetings = response_data['meetings']
-save_meeting_ids = get_selected_meetings(meetings)
 
-# Download the recordings and save to Google Drive
-for meeting in save_meeting_ids:
-    # download only MP4 files
-    if (meeting['recording_files'][0]['status'] == 'processing'):
-        print('  Zoom is still processing recordings...')
+def get_meetings_since(zoom_headers, since_date):
+    zoom_api_url = 'https://api.zoom.us/v2/users/me/recordings?'
+    query_string = urllib.parse.urlencode(
+        {'from': since_date.strftime('%Y-%m-%d')})
+    response = requests.get(zoom_api_url + query_string, headers=zoom_headers)
+    response_data = json.loads(response.text)
+    if 'meetings' not in response_data:
+        print('There are no recent meetings.')
+        sys.exit()
+    return response_data['meetings']
 
-    for recording in list(filter(lambda r: r['file_type'] == 'MP4',
-                                 meeting['recording_files'])):
-        download_url = recording['download_url']
-        file_name = (
-            f"{meeting['topic']} - "
-            f"{recording['recording_start'].replace(':', '-')}.mp4"
-        )
-        file_path = os.path.join(os.getcwd(), 'downloads', file_name)
-        # download
-        print(f'Downloading {file_name}')
-        downloadfile(download_url, file_path, recording['file_size'],
-                     zoom_headers)
 
-        # Upload the recording to Google Drive
-        drive_service = build('drive', 'v3', credentials=creds)
-        file_metadata = {'name': file_name,
-                         'parents': [google_drive_folder_id]}
-        media = MediaFileUpload(file_path, resumable=True)
-        print('Uploading downloaded file to Google Drive...')
-        file = drive_service.files().create(body=file_metadata,
-                                            media_body=media, fields='id',
-                                            supportsAllDrives=True
-                                            ).execute()
+def main():
+    google_drive_folder_id = get_google_drive_folder_id()
+    google_drive_creds = get_google_drive_credentials()
+    zoom_secrets_file = "zoom_credentials.json"
+    zoom_credentials = get_zoom_credentials(zoom_secrets_file)
+    zoom_headers = get_zoom_headers(zoom_credentials)
+    four_weeks_ago = datetime.date.today() - datetime.timedelta(days=28)
+    meetings = get_meetings_since(zoom_headers, four_weeks_ago)
+    selected_meetings = get_selected_meetings(meetings)
 
-        # Print the Google Drive file ID
-        print(f'Uploaded file ID: {file.get("id")}')
-        print('Open file ',
-              f'https://drive.google.com/file/d/{file.get("id")}/view')
-# finished!
-print('Finished')
+    # Download the recordings and save to Google Drive
+    for meeting in selected_meetings:
+        # Download only MP4 files
+        if meeting['recording_files'][0]['status'] == 'processing':
+            print('  Zoom is still processing recordings...')
+
+        for recording in list(filter(lambda r: r['file_type'] == 'MP4', 
+                                     meeting['recording_files'])):
+            download_url = recording['download_url']
+            file_name = f"{meeting['topic']} - "\
+                "{recording['recording_start'].replace(':', '-')}.mp4"
+            
+            file_path = os.path.join(os.getcwd(), 'downloads', file_name)
+
+            # Download
+            print(f'Downloading {file_name}')
+            downloadfile(download_url, file_path, recording['file_size'],
+                         zoom_headers)
+
+            # Upload the recording to Google Drive
+            drive_service = build('drive', 'v3', 
+                                  credentials=google_drive_creds)
+            file_metadata = {'name': file_name, 
+                             'parents': [google_drive_folder_id]}
+            media = MediaFileUpload(file_path, resumable=True)
+            print('Uploading downloaded file to Google Drive...')
+            file = drive_service.files()\
+                .create(body=file_metadata, media_body=media, fields='id',
+                        supportsAllDrives=True).execute()
+
+            # Print the Google Drive file ID
+            print(f'Uploaded file ID: {file.get("id")}')
+            print('Open file ', f'https://drive.google.com/file/d/{file.get("id")}/view')
+    # finished!
+    print('Finished')
+
+
+if __name__ == '__main__':
+    main()
