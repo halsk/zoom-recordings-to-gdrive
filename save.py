@@ -148,7 +148,7 @@ def get_google_drive_credentials():
 
 
 def get_zoom_credentials(zoom_secrets_file):
-    flow = flow_from_clientsecrets(zoom_secrets_file, 
+    flow = flow_from_clientsecrets(zoom_secrets_file,
                                    message='Please set up oauth first',
                                    scope=['recording:read'])
     storage = Storage("zoom_token.json")
@@ -193,12 +193,12 @@ def main():
         if meeting['recording_files'][0]['status'] == 'processing':
             print('  Zoom is still processing recordings...')
 
-        for recording in list(filter(lambda r: r['file_type'] == 'MP4', 
+        for recording in list(filter(lambda r: r['file_type'] == 'MP4',
                                      meeting['recording_files'])):
             download_url = recording['download_url']
             file_name = f"{meeting['topic']} - "\
                 "{recording['recording_start'].replace(':', '-')}.mp4"
-            
+
             file_path = os.path.join(os.getcwd(), 'downloads', file_name)
 
             # Download
@@ -207,9 +207,9 @@ def main():
                          zoom_headers)
 
             # Upload the recording to Google Drive
-            drive_service = build('drive', 'v3', 
+            drive_service = build('drive', 'v3',
                                   credentials=google_drive_creds)
-            file_metadata = {'name': file_name, 
+            file_metadata = {'name': file_name,
                              'parents': [google_drive_folder_id]}
             media = MediaFileUpload(file_path, resumable=True)
             print('Uploading downloaded file to Google Drive...')
@@ -219,7 +219,8 @@ def main():
 
             # Print the Google Drive file ID
             print(f'Uploaded file ID: {file.get("id")}')
-            print('Open file ', f'https://drive.google.com/file/d/{file.get("id")}/view')
+            print('Open file ',
+                  f'https://drive.google.com/file/d/{file.get("id")}/view')
     # finished!
     print('Finished')
 
