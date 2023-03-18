@@ -197,6 +197,9 @@ save_meeting_ids = get_selected_meetings(meetings)
 # Download the recordings and save to Google Drive
 for meeting in save_meeting_ids:
     # download only MP4 files
+    if (meeting['recording_files'][0]['status'] == 'processing'):
+        print('  Zoom is still processing recordings...')
+
     for recording in list(filter(lambda r: r['file_type'] == 'MP4',
                                  meeting['recording_files'])):
         download_url = recording['download_url']
@@ -223,5 +226,7 @@ for meeting in save_meeting_ids:
 
         # Print the Google Drive file ID
         print(f'Uploaded file ID: {file.get("id")}')
+        print('Open file ',
+              f'https://drive.google.com/file/d/{file.get("id")}/view')
 # finished!
 print('Finished')
