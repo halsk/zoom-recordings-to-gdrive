@@ -197,7 +197,7 @@ def main():
                                      meeting['recording_files'])):
             download_url = recording['download_url']
             file_name = f"{meeting['topic']} - "\
-                "{recording['recording_start'].replace(':', '-')}.mp4"
+                f"{recording['recording_start'].replace(':', '-')}.mp4"
 
             file_path = os.path.join(os.getcwd(), 'downloads', file_name)
 
